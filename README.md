@@ -392,6 +392,14 @@ Start-Sleep -Seconds 60
 docker ps
 ```
 
+### Primera petición lenta (30-60 segundos)
+
+Es normal. La primera petición inicializa la conexión a RabbitMQ, el pool de Hikari y la documentación Swagger. A partir de la segunda petición la respuesta es inmediata.
+
+### Reporte retorna lista vacía `[]` para Juan Osorio
+
+Es el comportamiento correcto. Juan Osorio intentó un retiro de $1000 sobre una cuenta con saldo de $150 — la transacción fue rechazada por saldo insuficiente (F3). Al no tener movimientos exitosos registrados el reporte retorna `[]`.
+
 ### Contenedor unhealthy — ver logs
 
 ```powershell
