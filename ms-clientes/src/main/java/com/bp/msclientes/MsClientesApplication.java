@@ -1,4 +1,4 @@
-package com.bp.ms_clientes;
+package com.bp.msclientes;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
