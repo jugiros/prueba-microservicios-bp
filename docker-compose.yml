@@ -1,0 +1,117 @@
+services:
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: bp-postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-bpuser}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-bppassword}
+      POSTGRES_DB: ${POSTGRES_DB:-bpdb}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - bp-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U bpuser -d bpdb"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  rabbitmq:
+    image: rabbitmq:3.13-management-alpine
+    container_name: bp-rabbitmq
+    hostname: bp-rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-bpuser}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-bppassword}
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    networks:
+      - bp-network
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+  ms-clientes:
+    build:
+      context: ./ms-clientes
+      dockerfile: Dockerfile
+    container_name: bp-ms-clientes
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ${POSTGRES_DB:-bpdb}
+      DB_USER: ${POSTGRES_USER:-bpuser}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-bppassword}
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USER: ${RABBITMQ_USER:-bpuser}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:-bppassword}
+      SERVER_PORT: 8081
+    ports:
+      - "8081:8081"
+    networks:
+      - bp-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8081/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  ms-cuentas:
+    build:
+      context: ./ms-cuentas
+      dockerfile: Dockerfile
+    container_name: bp-ms-cuentas
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ${POSTGRES_DB:-bpdb}
+      DB_USER: ${POSTGRES_USER:-bpuser}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-bppassword}
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USER: ${RABBITMQ_USER:-bpuser}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:-bppassword}
+      MS_CLIENTES_URL: http://ms-clientes:8081
+      SERVER_PORT: 8082
+    ports:
+      - "8082:8082"
+    networks:
+      - bp-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      ms-clientes:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8082/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+networks:
+  bp-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  rabbitmq_data:
