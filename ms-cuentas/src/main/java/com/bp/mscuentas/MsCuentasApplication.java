@@ -1,4 +1,4 @@
-package com.bp.ms_cuentas;
+package com.bp.mscuentas;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
