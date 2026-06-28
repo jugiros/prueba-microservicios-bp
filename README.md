@@ -366,6 +366,24 @@ El formato `fecha=inicio,fin` es la convención más adoptada en APIs REST para 
 
 ## Solución de Problemas
 
+### RabbitMQ — Queue con argumentos incompatibles
+
+**Error en logs de ms-cuentas:**
+```
+PRECONDITION_FAILED - inequivalent arg 'x-dead-letter-exchange' for queue 'cliente.creado.queue'
+```
+
+**Causa:** La queue existe en RabbitMQ con argumentos de una ejecución anterior incompatibles.
+
+**Solución:**
+```powershell
+docker-compose down -v
+docker-compose up --build -d
+```
+El `-v` elimina los volúmenes y RabbitMQ recrea la queue desde cero.
+
+---
+
 ### Conflicto de contenedores existentes
 
 ```powershell
